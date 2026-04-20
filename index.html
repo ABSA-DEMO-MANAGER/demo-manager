@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Demo Manager</title>
+<script src="https://unpkg.com/@azure/msal-browser@2.38.0/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F0F2F7;--sb:#0D1B33;--st:#A8B8D0;--ac:#1A6BFF;--al:#EBF1FF;
+  --wh:#FFF;--tx:#111827;--t2:#4B5563;--mu:#9CA3AF;--bd:#E5E7EB;
+  --ok:#059669;--okb:#D1FAE5;--wn:#D97706;--wnb:#FEF3C7;
+  --er:#DC2626;--erb:#FEE2E2;--r:10px;--sh:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+.screen{display:none}.screen.active{display:flex}
+/* LOADING */
+#sload{min-height:100vh;align-items:center;justify-content:center;background:var(--sb);flex-direction:column;gap:16px}
+.load-logo{font-size:52px}
+.load-txt{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff}
+.load-sub{font-size:13px;color:var(--st)}
+.spin{width:24px;height:24px;border:2.5px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* LOGIN */
+#sl{min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:24px;background:var(--sb)}
+.lcard{background:#fff;border-radius:20px;padding:48px 40px;max-width:380px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.35);text-align:center}
+.lcard h1{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px}
+.lcard p{color:var(--t2);font-size:13px;line-height:1.6;margin-bottom:28px}
+.lco{font-size:11px;color:var(--mu);margin-top:16px}
+/* REGISTER */
+#sreg{min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:24px;background:var(--sb)}
+.rcard{background:#fff;border-radius:16px;padding:36px;max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.rcard h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;text-align:center}
+/* WAITING */
+#swait{min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:24px;background:var(--sb)}
+.wcard{background:#fff;border-radius:16px;padding:40px 36px;max-width:400px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.3);text-align:center}
+/* FORM */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--tx);background:#fff;outline:none;transition:border .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--ac)}
+.fg input:disabled{background:var(--bg);color:var(--t2)}
+.hint{font-size:11.5px;color:var(--mu);margin-top:3px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:500;transition:all .2s}
+.bp{background:var(--ac);color:#fff}.bp:hover{background:#1259E0}.bp:disabled{opacity:.5;cursor:not-allowed}
+.bs{background:var(--bg);color:var(--tx);border:1.5px solid var(--bd)}.bs:hover{background:var(--bd)}
+.bd2{background:var(--er);color:#fff}.bd2:hover{background:#B91C1C}
+.bok{background:var(--ok);color:#fff}.bok:hover{background:#047857}
+.bg2{background:transparent;color:var(--ac)}.bg2:hover{background:var(--al)}
+.bfull{width:100%;justify-content:center;padding:12px;font-size:15px;font-weight:600}
+.bms{background:#0078D4;color:#fff}.bms:hover{background:#0063B1}
+.bsm{padding:6px 13px;font-size:12.5px}.bxs{padding:4px 9px;font-size:12px;border-radius:6px}
+/* APP */
+#sa{min-height:100vh;flex-direction:row}
+.sidebar{width:220px;background:var(--sb);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .3s}
+.sl-logo{padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sl-lt{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff}
+.sl-ls{font-size:11px;color:var(--st);margin-top:1px}
+.sl-nav{flex:1;padding:10px;overflow-y:auto}
+.ns{font-size:10px;font-weight:700;color:rgba(168,184,208,.45);text-transform:uppercase;letter-spacing:.8px;padding:12px 10px 5px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--st);font-size:13px;font-weight:500;transition:all .2s;margin-bottom:2px;position:relative}
+.ni:hover{background:rgba(255,255,255,.07);color:#fff}.ni.active{background:var(--ac);color:#fff}
+.ni svg{width:16px;height:16px;flex-shrink:0}
+.bdot{position:absolute;right:10px;background:#FF5533;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center}
+.sl-user{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.u-av{width:32px;height:32px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.u-nm{font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50}
+.tb-l{display:flex;align-items:center;gap:12px}
+.ham{display:none;background:none;border:none;cursor:pointer;padding:6px}
+.tb-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.ca{padding:20px;flex:1}
+.view{display:none}.view.active{display:block}
+/* CARDS */
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh)}
+.ch{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:10px}
+.ct{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:9px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;background:var(--bg);border-bottom:1px solid var(--bd)}
+td{padding:11px 14px;border-bottom:1px solid var(--bd);vertical-align:middle;font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(26,107,255,.015)}
+.es{padding:40px 20px;text-align:center;color:var(--mu)}
+.es-i{font-size:36px;margin-bottom:10px}
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.sc{background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--sh)}
+.sv{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:2px}
+.sl2{font-size:12px;color:var(--mu);font-weight:500}
+/* BOARD */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.bc{background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--sh);border-top:3px solid var(--bd)}
+.bc.oficina{border-top-color:var(--ok)}.bc.campo{border-top-color:var(--ac)}
+.bc-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px}
+.bc-demo{background:var(--bg);border-radius:6px;padding:7px 10px;margin-bottom:6px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600}
+.b-ok{background:var(--okb);color:var(--ok)}.b-wn{background:var(--wnb);color:var(--wn)}
+.b-ac{background:var(--al);color:var(--ac)}.b-er{background:var(--erb);color:var(--er)}
+.b-bl{background:#FCE7F3;color:#DB2777}.b-vd{background:var(--al);color:var(--ac)}
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.mo.open{display:flex}
+.md{background:#fff;border-radius:14px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.mh{padding:18px 22px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.mh h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.mc{background:none;border:none;cursor:pointer;font-size:22px;color:var(--mu);line-height:1;padding:2px 6px;border-radius:6px}
+.mc:hover{background:var(--bg)}
+.mb{padding:18px 22px}
+.mf{padding:12px 22px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff}
+/* VENDOR */
+#sv{min-height:100vh;flex-direction:column;background:var(--bg)}
+.vt{background:var(--sb);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.vt-t{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#fff}
+.vc{padding:14px;flex:1}
+.dc{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:var(--sh);border-left:4px solid var(--bd)}
+.dc.pendiente{border-left-color:var(--wn)}.dc.en-campo{border-left-color:var(--ac)}
+.dc-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px}
+.dc-meta{font-size:12px;color:var(--mu);margin-bottom:10px}
+/* PHOTO */
+.cam{background:var(--bg);border-radius:10px;padding:18px;text-align:center;border:2px dashed var(--bd);cursor:pointer;transition:border .2s;margin-bottom:12px}
+.cam:hover{border-color:var(--ac);background:var(--al)}
+.ph-prev{width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:2px solid var(--bd);margin-bottom:10px}
+/* CONFIG */
+.cfg-sec{background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:14px}
+.cfg-sh{padding:14px 18px;border-bottom:1px solid var(--bd);font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.cfg-sb{padding:18px}
+.cfg-saved{font-size:12px;color:var(--ok);margin-top:6px;display:none}
+/* MISC */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;max-width:300px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.toast.show{transform:translateY(0);opacity:1}.toast.ok{background:var(--ok)}.toast.er{background:var(--er)}
+.so{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}.so.open{display:block}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.pt{font-family:'Syne',sans-serif;font-size:19px;font-weight:800}
+.si2{padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:200px;transition:border .2s}
+.si2:focus{border-color:var(--ac)}
+.notice{background:var(--wnb);border:1px solid var(--wn);border-radius:8px;padding:9px 13px;font-size:12.5px;color:var(--wn);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.divider{border:none;border-top:1px solid var(--bd);margin:14px 0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hi{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd)}
+.hi:last-child{border-bottom:none}
+@media(max-width:900px){.sg{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
+@media(max-width:680px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}.ham{display:flex}
+  .sg{grid-template-columns:repeat(2,1fr);gap:10px}.ca{padding:14px}
+  .hm{display:none!important}th.hm,td.hm{display:none}.topbar{padding:0 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="sload" class="screen active">
+  <div class="load-logo">📋</div>
+  <div class="load-txt">Demo Manager</div>
+  <div class="load-sub" id="load-msg">Iniciando...</div>
+  <div class="spin" style="margin-top:8px"></div>
+</div>
+
+<!-- LOGIN -->
+<div id="sl" class="screen">
+  <div class="lcard">
+    <div style="font-size:52px;margin-bottom:16px">📋</div>
+    <h1>Demo Manager</h1>
+    <p>Gestión de demos con cadena de custodia.<br>Inicia sesión con tu cuenta corporativa.</p>
+    <button class="btn bms bfull" onclick="doLogin()" id="btn-login">
+      <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Iniciar con Microsoft
+    </button>
+    <div class="lco">ELECTRICA A-B SA DE CV · Uso interno</div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="sreg" class="screen">
+  <div class="rcard">
+    <div style="font-size:36px;margin-bottom:10px;text-align:center">👋</div>
+    <h2 style="margin-bottom:4px">Solicitar acceso</h2>
+    <p style="text-align:center;color:var(--t2);font-size:13px;margin-bottom:20px">Completa tu información para solicitar acceso al sistema.</p>
+    <div class="fg"><label>Nombre</label><input id="reg-nom" disabled></div>
+    <div class="fg"><label>Email</label><input id="reg-em" disabled></div>
+    <div class="fg"><label>Teléfono WhatsApp *</label>
+      <input id="reg-tel" placeholder="521XXXXXXXXXX">
+      <div class="hint">Con código de país. Ej: 5213312345678</div>
+    </div>
+    <div class="fg"><label>Rol *</label>
+      <select id="reg-rol"><option value="Vendedor">Vendedor</option><option value="BL">Business Leader (BL)</option></select>
+    </div>
+    <button class="btn bp bfull" onclick="enviarSolicitud()" id="btn-reg">Enviar solicitud</button>
+    <p style="font-size:12px;color:var(--mu);margin-top:12px;text-align:center;cursor:pointer" onclick="doLogout()">← Salir</p>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div id="swait" class="screen">
+  <div class="wcard">
+    <div style="font-size:52px;margin-bottom:14px">⏳</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:8px">Solicitud enviada</h2>
+    <p style="color:var(--t2);font-size:13px;line-height:1.6;margin-bottom:16px">El administrador revisará tu solicitud y recibirás una notificación cuando sea aprobada.</p>
+    <div id="wait-info" style="background:var(--bg);border-radius:8px;padding:12px;font-size:13px;color:var(--t2);margin-bottom:20px;text-align:left"></div>
+    <button class="btn bs bfull" onclick="recheck()">🔄 Verificar aprobación</button>
+    <p style="font-size:12px;color:var(--mu);margin-top:12px;cursor:pointer" onclick="doLogout()">← Salir</p>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="sa" class="screen">
+  <div class="so" id="so" onclick="closeSb()"></div>
+  <div class="sidebar" id="sb">
+    <div class="sl-logo"><div class="sl-lt">Demo Manager</div><div class="sl-ls">Panel Admin</div></div>
+    <nav class="sl-nav">
+      <div class="ns">Principal</div>
+      <div class="ni active" onclick="nav('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Ubicaciones
+      </div>
+      <div class="ns">Gestión</div>
+      <div class="ni" onclick="nav('demos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Demos
+      </div>
+      <div class="ni" onclick="nav('personas')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Personas
+      </div>
+      <div class="ni" onclick="nav('solicitudes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>Solicitudes
+        <span class="bdot" id="dot-sol" style="display:none">0</span>
+      </div>
+      <div class="ni" onclick="nav('pendientes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Custodia Pend.
+        <span class="bdot" id="dot-pend" style="display:none">0</span>
+      </div>
+      <div class="ni" onclick="nav('historial')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Historial
+      </div>
+      <div class="ns">Sistema</div>
+      <div class="ni" onclick="nav('config')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Configuración
+      </div>
+    </nav>
+    <div class="sl-user">
+      <div class="u-av" id="av">A</div>
+      <div style="flex:1;overflow:hidden"><div class="u-nm" id="uname">—</div><div style="font-size:11px;color:var(--st)">⭐ Admin</div></div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-l">
+        <button class="ham" onclick="openSb()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="tb-title" id="tbtitle">Ubicaciones</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn bs bsm" onclick="syncAll()">↻</button>
+        <button class="btn bs bsm" onclick="doLogout()">Salir</button>
+      </div>
+    </div>
+    <div class="ca">
+      <div id="v-dashboard" class="view active">
+        <div class="ph"><div class="pt">¿Dónde está cada demo?</div></div>
+        <div id="board"></div>
+        <div class="sg" id="stats"></div>
+      </div>
+      <div id="v-demos" class="view">
+        <div class="ph"><div class="pt">Demos</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input class="si2" id="sd" placeholder="Buscar..." oninput="filterT('td','sd')">
+            <button class="btn bp bsm" onclick="openM('m-add-demo')">+ Nuevo</button>
+          </div>
+        </div>
+        <div class="card"><table id="td"><thead><tr><th>Demo</th><th>Ubicación</th><th>Estado</th><th>Acc.</th></tr></thead><tbody id="tbd"></tbody></table></div>
+      </div>
+      <div id="v-personas" class="view">
+        <div class="ph"><div class="pt">Personas aprobadas</div>
+          <input class="si2" id="sp" placeholder="Buscar..." oninput="filterT('tp','sp')">
+        </div>
+        <div class="card"><table id="tp"><thead><tr><th>Nombre</th><th>Email</th><th class="hm">Teléfono</th><th>Rol</th><th>Demos</th><th></th></tr></thead><tbody id="tbp"></tbody></table></div>
+      </div>
+      <div id="v-solicitudes" class="view">
+        <div class="ph"><div class="pt">Solicitudes de acceso</div></div>
+        <div id="sol-list"></div>
+      </div>
+      <div id="v-pendientes" class="view">
+        <div class="ph"><div class="pt">Custodia pendiente</div></div>
+        <div id="pend-list"></div>
+      </div>
+      <div id="v-historial" class="view">
+        <div class="ph"><div class="pt">Historial de custodia</div></div>
+        <div class="card"><div style="padding:8px 16px" id="hist-list"></div></div>
+      </div>
+      <div id="v-config" class="view">
+        <div class="pt" style="margin-bottom:16px">Configuración</div>
+        <div class="cfg-sec">
+          <div class="cfg-sh">📧 Notificaciones — EmailJS</div>
+          <div class="cfg-sb">
+            <p style="font-size:13px;color:var(--t2);margin-bottom:12px">Configura EmailJS para enviar notificaciones por correo cuando se asignen o transfieran demos.</p>
+            <div class="two-col">
+              <div class="fg"><label>Service ID</label><input id="cfg-ejs" placeholder="service_xxx"></div>
+              <div class="fg"><label>Template ID</label><input id="cfg-ejt" placeholder="template_xxx"></div>
+            </div>
+            <div class="fg"><label>Public Key</label><input id="cfg-ejk" placeholder="xxxxxxx"></div>
+            <button class="btn bp bsm" onclick="saveEmailCfg()">Guardar EmailJS</button>
+            <div class="cfg-saved" id="saved-ejs">✓ Guardado en Excel</div>
+          </div>
+        </div>
+        <div class="cfg-sec">
+          <div class="cfg-sh">⭐ Administradores</div>
+          <div class="cfg-sb">
+            <p style="font-size:13px;color:var(--t2);margin-bottom:12px">Los admins tienen acceso completo. Se guardan en la hoja Config del Excel — aplica para todos los dispositivos.</p>
+            <div id="admins-list" style="margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px"><input type="email" id="new-admin" class="si2" placeholder="email@empresa.com" style="flex:1"><button class="btn bp bsm" onclick="addAdmin()">+ Agregar</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VENDOR -->
+<div id="sv" class="screen">
+  <div class="vt">
+    <div class="vt-t">📋 Demo Manager</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="v-uname" style="font-size:12px;color:var(--st)"></span>
+      <button class="btn bxs" style="background:rgba(255,255,255,.15);color:#fff;border:none" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div class="vc"><div id="v-pend-sec"></div><div id="v-mine-sec"></div></div>
+</div>
+
+<!-- MODALS -->
+<div class="mo" id="m-add-demo"><div class="md">
+  <div class="mh"><h3>Nuevo Demo</h3><button class="mc" onclick="closeM('m-add-demo')">×</button></div>
+  <div class="mb">
+    <div class="fg"><label>Nombre *</label><input id="d-nom" placeholder="Ej: Demo Producto X"></div>
+    <div class="fg"><label>Descripción</label><textarea id="d-desc" rows="2" style="resize:vertical"></textarea></div>
+    <div class="fg"><label>Número de serie</label><input id="d-serie" placeholder="SN-2024-001"></div>
+  </div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-add-demo')">Cancelar</button><button class="btn bp" onclick="addDemo()" id="btn-add-demo">Guardar</button></div>
+</div></div>
+
+<div class="mo" id="m-asignar"><div class="md">
+  <div class="mh"><h3>Asignar Demo</h3><button class="mc" onclick="closeM('m-asignar')">×</button></div>
+  <div class="mb">
+    <div class="notice">📦 El demo quedará pendiente hasta que el receptor acepte con foto.</div>
+    <div class="fg"><label>Demo *</label><select id="a-demo"><option value="">Selecciona...</option></select></div>
+    <div class="fg"><label>Asignar a *</label><select id="a-pers"><option value="">Selecciona...</option></select></div>
+    <div class="fg"><label>Notas</label><textarea id="a-notas" rows="2"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-asignar')">Cancelar</button><button class="btn bp" onclick="asignarDemo()">Asignar y Notificar</button></div>
+</div></div>
+
+<div class="mo" id="m-aceptar-dev"><div class="md">
+  <div class="mh"><h3>Confirmar Recepción en Oficina</h3><button class="mc" onclick="closeM('m-aceptar-dev')">×</button></div>
+  <div class="mb">
+    <div id="dev-info" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+    <div class="cam" onclick="document.getElementById('ph-dev').click()"><div style="font-size:36px;margin-bottom:6px">📷</div><p>Tomar foto de recepción</p></div>
+    <input type="file" id="ph-dev" accept="image/*" capture="environment" style="display:none" onchange="photoSel(event,'dev')">
+    <div id="prev-dev" style="display:none"><img id="img-dev" class="ph-prev"><button class="btn bg2 bsm" onclick="clearPh('dev')">× Cambiar</button></div>
+  </div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-aceptar-dev')">Cancelar</button><button class="btn bok bfull" onclick="confirmarDev()" id="btn-cdev" disabled>✓ Demo Recibido en Oficina</button></div>
+</div></div>
+
+<div class="mo" id="m-aceptar"><div class="md">
+  <div class="mh"><h3>Aceptar Demo</h3><button class="mc" onclick="closeM('m-aceptar')">×</button></div>
+  <div class="mb">
+    <div id="ac-info" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+    <div class="cam" onclick="document.getElementById('ph-ac').click()"><div style="font-size:36px;margin-bottom:6px">📷</div><p>Toma foto del demo recibido</p></div>
+    <input type="file" id="ph-ac" accept="image/*" capture="environment" style="display:none" onchange="photoSel(event,'ac')">
+    <div id="prev-ac" style="display:none"><img id="img-ac" class="ph-prev"><button class="btn bg2 bsm" onclick="clearPh('ac')">× Cambiar</button></div>
+  </div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-aceptar')">Cancelar</button><button class="btn bok bfull" onclick="aceptarDemo()" id="btn-ac" disabled>✓ Confirmar Recepción</button></div>
+</div></div>
+
+<div class="mo" id="m-transferir"><div class="md">
+  <div class="mh"><h3>Transferir Demo</h3><button class="mc" onclick="closeM('m-transferir')">×</button></div>
+  <div class="mb">
+    <div id="tr-info" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+    <div class="fg"><label>Transferir a *</label><select id="tr-pers"><option value="">Selecciona...</option></select></div>
+    <div class="fg"><label>Notas</label><textarea id="tr-notas" rows="2"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-transferir')">Cancelar</button><button class="btn bp" onclick="transferirDemo()">Transferir y Notificar</button></div>
+</div></div>
+
+<div class="mo" id="m-devolver"><div class="md">
+  <div class="mh"><h3>Devolver a Oficina</h3><button class="mc" onclick="closeM('m-devolver')">×</button></div>
+  <div class="mb">
+    <div id="dv-info" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
+    <div class="notice">📬 Se notificará al administrador para confirmar la recepción.</div>
+    <div class="fg"><label>Notas</label><textarea id="dv-notas" rows="2"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-devolver')">Cancelar</button><button class="btn bp" onclick="devolverDemo()">Notificar Devolución</button></div>
+</div></div>
+
+<div class="mo" id="m-foto"><div class="md">
+  <div class="mh"><h3>Evidencia fotográfica</h3><button class="mc" onclick="closeM('m-foto')">×</button></div>
+  <div class="mb" style="text-align:center">
+    <img id="foto-img" src="" style="max-width:100%;border-radius:10px">
+    <p id="foto-info" style="margin-top:10px;font-size:12px;color:var(--mu)"></p>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONSTANTS — hardcoded for this deployment
+// ═══════════════════════════════════════════════════
+const AZURE_CLIENT_ID = '860d8ba4-31a6-4753-afae-5fcd9e98a3ea';
+const AZURE_TENANT_ID = 'b082fba7-f033-4ac3-b784-901ee50db4fb';
+const EXCEL_FILENAME  = 'Demo Manager.xlsx';
+const SCOPES = ['Files.ReadWrite'];
+const OFICINA = 'ABSA_AMAPOLA';
+const OFICINA_NOM = 'ABSA Amapola';
+const SH = { D:'Demos', P:'Personas', C:'Custodia', SOL:'Solicitudes', CFG:'Config' };
+const DH = ['ID','Nombre','Descripcion','NumSerie','UbicacionActual','CustodioNombre','FechaCreacion','Estado'];
+const PH = ['ID','Nombre','Email','Telefono','Rol','FechaAlta'];
+const CH = ['ID','DemoID','DemoNombre','DeID','DeNombre','ParaID','ParaNombre','Estado','FechaTransferencia','FechaAceptacion','FotoBase64','Notas','Tipo'];
+const SOLH = ['ID','Nombre','Email','Telefono','Rol','Estado','FechaAlta'];
+
+// ═══════════════════════════════════════════════════
+// STATE — all data comes from Excel, no localStorage
+// ═══════════════════════════════════════════════════
+let S = {
+  user: null, role: 'vendor',
+  demos: [], personas: [], custodia: [], solicitudes: [],
+  adminEmails: [],
+  emailjsCfg: { service:'', template:'', key:'' },
+  fileId: null,       // resolved Graph API item ID for the Excel file
+  tokenCache: { token: null, expires: 0 },
+  // temp state
+  pendingCustId: null, pendingDevId: null, pendingTrId: null, pendingDvId: null,
+  photos: { ac: null, dev: null }
+};
+
+let msalInst = null;
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  setLoad('Cargando Microsoft Auth...');
+  try {
+    msalInst = new msal.PublicClientApplication({
+      auth: {
+        clientId: AZURE_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${AZURE_TENANT_ID}`,
+        redirectUri: location.href.split('?')[0].split('#')[0]
+      }
+    });
+    msalInst.handleRedirectPromise()
+      .then(r => {
+        if (r?.account) {
+          cacheToken(r.accessToken, r.expiresOn);
+          loginOK({ name: r.account.name, email: r.account.username });
+        } else {
+          const accounts = msalInst.getAllAccounts();
+          if (accounts.length) {
+            loginOK({ name: accounts[0].name, email: accounts[0].username });
+          } else {
+            show('sl');
+          }
+        }
+      })
+      .catch(e => { toast('Error auth: ' + e.message, 'er'); show('sl'); });
+  } catch(e) { toast('Error iniciando app: ' + e.message, 'er'); show('sl'); }
+});
+
+function setLoad(msg) {
+  document.getElementById('load-msg').textContent = msg;
+  show('sload');
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+function cacheToken(token, expiresOn) {
+  S.tokenCache = { token, expires: expiresOn ? new Date(expiresOn).getTime() : Date.now() + 3500000 };
+}
+
+async function getToken() {
+  if (S.tokenCache.token && S.tokenCache.expires > Date.now() + 120000) return S.tokenCache.token;
+  const accounts = msalInst.getAllAccounts();
+  if (!accounts.length) throw new Error('Sesión expirada');
+  try {
+    const r = await msalInst.acquireTokenSilent({ scopes: SCOPES, account: accounts[0] });
+    cacheToken(r.accessToken, r.expiresOn);
+    return r.accessToken;
+  } catch(e) {
+    if (e instanceof msal.InteractionRequiredAuthError) {
+      await msalInst.acquireTokenRedirect({ scopes: SCOPES });
+    }
+    throw e;
+  }
+}
+
+async function doLogin() {
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Redirigiendo...';
+  try { await msalInst.loginRedirect({ scopes: SCOPES }); }
+  catch(e) {
+    toast('Error: ' + e.message, 'er');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg> Iniciar con Microsoft';
+  }
+}
+
+function doLogout() {
+  S.user = null; S.fileId = null; S.tokenCache = { token: null, expires: 0 };
+  const accounts = msalInst?.getAllAccounts() || [];
+  if (accounts.length) msalInst.logoutRedirect({ account: accounts[0] }).catch(()=>{});
+  else show('sl');
+}
+
+// ═══════════════════════════════════════════════════
+// LOGIN FLOW — reads everything from Excel
+// ═══════════════════════════════════════════════════
+async function loginOK(user) {
+  S.user = user;
+  setLoad('Conectando con Excel...');
+  try {
+    await resolveFileId();
+    setLoad('Cargando datos...');
+    await loadAll();
+  } catch(e) {
+    toast('Error conectando Excel: ' + e.message, 'er');
+    show('sl'); return;
+  }
+  // Determine role
+  const isAdmin = S.adminEmails.includes(user.email.toLowerCase());
+  if (isAdmin) {
+    S.role = 'admin';
+    document.getElementById('uname').textContent = user.name;
+    document.getElementById('av').textContent = user.name[0].toUpperCase();
+    if (S.emailjsCfg.key) emailjs.init(S.emailjsCfg.key);
+    show('sa'); nav('dashboard'); return;
+  }
+  const persona = S.personas.find(p => p.Email.toLowerCase() === user.email.toLowerCase());
+  if (persona) {
+    S.role = 'vendor';
+    document.getElementById('v-uname').textContent = user.name;
+    show('sv'); renderVendor(); return;
+  }
+  const sol = S.solicitudes.find(s => s.Email.toLowerCase() === user.email.toLowerCase() && s.Estado === 'Pendiente');
+  if (sol) { showWaiting(user, sol); return; }
+  show('sreg');
+  document.getElementById('reg-nom').value = user.name;
+  document.getElementById('reg-em').value = user.email;
+}
+
+async function recheck() {
+  setLoad('Verificando...');
+  try { await loadAll(); } catch(e) {}
+  const persona = S.personas.find(p => p.Email.toLowerCase() === S.user?.email?.toLowerCase());
+  if (persona) {
+    S.role = 'vendor';
+    document.getElementById('v-uname').textContent = S.user.name;
+    show('sv'); renderVendor(); toast('¡Acceso aprobado!', 'ok');
+  } else { show('swait'); toast('Aún pendiente', 'er'); }
+}
+
+function showWaiting(user, sol) {
+  show('swait');
+  document.getElementById('wait-info').innerHTML = `<strong>${user.name}</strong><br>${user.email}<br>Rol: <strong>${sol.Rol}</strong><br>Enviado: ${fmt(sol.FechaAlta)}`;
+}
+
+// ═══════════════════════════════════════════════════
+// GRAPH API
+// ═══════════════════════════════════════════════════
+async function gfetch(ep, method = 'GET', body = null) {
+  const token = await getToken();
+  const opts = { method, headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('https://graph.microsoft.com/v1.0' + ep, opts);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`${res.status}: ${err.substring(0, 200)}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function resolveFileId() {
+  if (S.fileId) return;
+  // Search in OneDrive for the Excel file by name
+  try {
+    const results = await gfetch(`/me/drive/root/search(q='${EXCEL_FILENAME}')`);
+    const file = results?.value?.find(f => f.name === EXCEL_FILENAME);
+    if (file?.id) { S.fileId = file.id; return; }
+  } catch(e) {}
+  // Fallback: try root path
+  const item = await gfetch(`/me/drive/root:/${encodeURIComponent(EXCEL_FILENAME)}`);
+  if (item?.id) { S.fileId = item.id; return; }
+  throw new Error('No se encontró el archivo "' + EXCEL_FILENAME + '" en OneDrive.');
+}
+
+const wb = () => `/me/drive/items/${S.fileId}/workbook/worksheets`;
+
+async function readSheet(sh) {
+  try {
+    const d = await gfetch(`${wb()}/${sh}/usedRange`);
+    if (!d?.values || d.values.length < 2) return [];
+    const [hdrs, ...rows] = d.values;
+    return rows.map(r => { const o = {}; hdrs.forEach((h, i) => o[h] = r[i] ?? ''); return o; });
+  } catch(e) { return []; }
+}
+
+async function appendRow(sh, hdrs, vals) {
+  const d = await gfetch(`${wb()}/${sh}/usedRange`).catch(() => null);
+  const nr = d?.values ? d.values.length + 1 : 2;
+  const col = String.fromCharCode(64 + hdrs.length);
+  await gfetch(`${wb()}/${sh}/range(address='A${nr}:${col}${nr}')`, 'PATCH', { values: [vals] });
+}
+
+async function updateRowAt(sh, hdrs, idx, vals) {
+  const row = idx + 2;
+  const col = String.fromCharCode(64 + hdrs.length);
+  await gfetch(`${wb()}/${sh}/range(address='A${row}:${col}${row}')`, 'PATCH', { values: [vals] });
+}
+
+// ═══════════════════════════════════════════════════
+// DATA — all reads from Excel
+// ═══════════════════════════════════════════════════
+async function loadAll() {
+  const [demos, pers, cust, sol, cfg] = await Promise.all([
+    readSheet(SH.D), readSheet(SH.P), readSheet(SH.C),
+    readSheet(SH.SOL), readSheet(SH.CFG)
+  ]);
+  S.demos = demos; S.personas = pers; S.custodia = cust; S.solicitudes = sol;
+  // Parse config from Config sheet
+  S.adminEmails = cfg.filter(r => r.Clave === 'Admin' && r.Valor).map(r => r.Valor.toLowerCase());
+  const ejsRow = cfg.find(r => r.Clave === 'EmailJS');
+  if (ejsRow?.Valor) {
+    try { S.emailjsCfg = JSON.parse(ejsRow.Valor); } catch(e) {}
+  }
+}
+
+async function syncAll() {
+  setLoad('Actualizando...');
+  try {
+    await loadAll();
+    renderAll(); toast('Actualizado ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+  if (S.role === 'admin') show('sa'); else show('sv');
+}
+
+async function saveConfigToExcel() {
+  // Build config rows
+  const rows = [
+    ['Clave', 'Valor'],
+    ...S.adminEmails.map(e => ['Admin', e]),
+    ['EmailJS', JSON.stringify(S.emailjsCfg)]
+  ];
+  const col = 'B';
+  await gfetch(`${wb()}/${SH.CFG}/range(address='A1:${col}${rows.length}')`, 'PATCH', { values: rows });
+}
+
+// ═══════════════════════════════════════════════════
+// REGISTRATION
+// ═══════════════════════════════════════════════════
+async function enviarSolicitud() {
+  const tel = v('reg-tel');
+  if (!tel) { toast('El teléfono es requerido', 'er'); return; }
+  const btn = document.getElementById('btn-reg');
+  btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Enviando...';
+  try {
+    // Remove previous request from same email
+    const prev = S.solicitudes.findIndex(s => s.Email.toLowerCase() === S.user.email.toLowerCase());
+    const sol = { ID: uid(), Nombre: S.user.name, Email: S.user.email, Telefono: tel, Rol: v('reg-rol'), Estado: 'Pendiente', FechaAlta: today() };
+    if (prev !== -1) {
+      S.solicitudes[prev] = sol;
+      await updateRowAt(SH.SOL, SOLH, prev, SOLH.map(h => sol[h] ?? ''));
+    } else {
+      S.solicitudes.push(sol);
+      await appendRow(SH.SOL, SOLH, SOLH.map(h => sol[h] ?? ''));
+    }
+    // Notify admins
+    const msg = `📋 *Demo Manager*\nNueva solicitud:\n*${sol.Nombre}* (${sol.Email})\nRol: ${sol.Rol}\n${location.origin + location.pathname}`;
+    for (const em of S.adminEmails) await sendEmail(em, 'Admin', '—', sol.Nombre, msg);
+    showWaiting(S.user, sol); toast('Solicitud enviada ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+  btn.disabled = false; btn.textContent = 'Enviar solicitud';
+}
+
+// ═══════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════
+async function sendEmail(toEmail, toName, demo, de, mensaje) {
+  if (!S.emailjsCfg?.key || !S.emailjsCfg?.service) return;
+  try { await emailjs.send(S.emailjsCfg.service, S.emailjsCfg.template, { to_email: toEmail, to_name: toName, demo, de, mensaje, app_url: location.origin + location.pathname }); }
+  catch(e) {}
+}
+
+function sendWA(tel, msg) {
+  if (!tel) return;
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+async function notif(pers, demo, tipo, extra = '') {
+  const url = location.origin + location.pathname;
+  let msg = '';
+  if (tipo === 'asignacion')   msg = `📋 *Demo Manager*\nHola ${pers.Nombre}, se te asignó el demo *${demo.Nombre}*.\nEntra a aceptar: ${url}${extra ? '\nNotas: ' + extra : ''}`;
+  if (tipo === 'transferencia') msg = `📋 *Demo Manager*\nHola ${pers.Nombre}, *${extra}* te transfirió el demo *${demo.Nombre}*.\nEntra a aceptar: ${url}`;
+  if (tipo === 'devolucion')   msg = `📋 *Demo Manager*\n*${pers.Nombre}* devuelve *${demo.Nombre}* a la oficina. Confirma en: ${url}`;
+  if (tipo === 'aprobado')     msg = `📋 *Demo Manager*\nHola ${pers.Nombre}, tu acceso fue *aprobado*. Entra en: ${url}`;
+  if (tipo === 'rechazado')    msg = `📋 *Demo Manager*\nHola ${pers.Nombre}, tu solicitud fue *rechazada*. Contacta al administrador.`;
+  await sendEmail(pers.Email, pers.Nombre, demo?.Nombre || '—', S.user?.name || 'Admin', msg);
+  if (pers.Telefono) sendWA(pers.Telefono, msg);
+}
+
+// ═══════════════════════════════════════════════════
+// ADMIN — CONFIG
+// ═══════════════════════════════════════════════════
+async function addAdmin() {
+  const em = document.getElementById('new-admin').value.trim().toLowerCase();
+  if (!em) return;
+  if (S.adminEmails.includes(em)) { toast('Ya es admin', 'er'); return; }
+  S.adminEmails.push(em);
+  try { await saveConfigToExcel(); renderConfig(); toast('Admin agregado y guardado en Excel ✓', 'ok'); }
+  catch(e) { toast('Error: ' + e.message, 'er'); }
+  document.getElementById('new-admin').value = '';
+}
+
+async function removeAdmin(em) {
+  if (S.adminEmails.length <= 1) { toast('No puedes eliminar el único admin', 'er'); return; }
+  if (!confirm('¿Quitar a ' + em + ' como admin?')) return;
+  S.adminEmails = S.adminEmails.filter(e => e !== em);
+  try { await saveConfigToExcel(); renderConfig(); toast('Admin eliminado ✓', 'ok'); }
+  catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+async function saveEmailCfg() {
+  S.emailjsCfg = { service: v('cfg-ejs'), template: v('cfg-ejt'), key: v('cfg-ejk') };
+  try {
+    await saveConfigToExcel();
+    if (S.emailjsCfg.key) emailjs.init(S.emailjsCfg.key);
+    showSaved('saved-ejs'); toast('EmailJS guardado en Excel ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+function showSaved(id) { const el = document.getElementById(id); el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
+
+// ═══════════════════════════════════════════════════
+// ADMIN — SOLICITUDES
+// ═══════════════════════════════════════════════════
+async function aprobarSolicitud(solId) {
+  const sol = S.solicitudes.find(s => s.ID === solId); if (!sol) return;
+  try {
+    const p = { ID: uid(), Nombre: sol.Nombre, Email: sol.Email, Telefono: sol.Telefono, Rol: sol.Rol, FechaAlta: today() };
+    S.personas.push(p);
+    await appendRow(SH.P, PH, PH.map(h => p[h] ?? ''));
+    const idx = S.solicitudes.findIndex(s => s.ID === solId);
+    S.solicitudes[idx].Estado = 'Aprobado';
+    await updateRowAt(SH.SOL, SOLH, idx, SOLH.map(h => S.solicitudes[idx][h] ?? ''));
+    await notif(sol, null, 'aprobado');
+    renderAll(); toast(`${sol.Nombre} aprobado ✓`, 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+async function rechazarSolicitud(solId) {
+  if (!confirm('¿Rechazar esta solicitud?')) return;
+  const sol = S.solicitudes.find(s => s.ID === solId); if (!sol) return;
+  try {
+    const idx = S.solicitudes.findIndex(s => s.ID === solId);
+    S.solicitudes[idx].Estado = 'Rechazado';
+    await updateRowAt(SH.SOL, SOLH, idx, SOLH.map(h => S.solicitudes[idx][h] ?? ''));
+    await notif(sol, null, 'rechazado');
+    renderAll(); toast('Solicitud rechazada', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+// ═══════════════════════════════════════════════════
+// ADMIN — DEMOS
+// ═══════════════════════════════════════════════════
+async function addDemo() {
+  const nom = v('d-nom'); if (!nom) { toast('Nombre requerido', 'er'); return; }
+  const btn = document.getElementById('btn-add-demo');
+  btn.disabled = true; btn.innerHTML = '<div class="spin"></div>';
+  try {
+    const d = { ID: uid(), Nombre: nom, Descripcion: v('d-desc'), NumSerie: v('d-serie'), UbicacionActual: OFICINA, CustodioNombre: OFICINA_NOM, FechaCreacion: today(), Estado: 'En Oficina' };
+    S.demos.push(d);
+    await appendRow(SH.D, DH, DH.map(h => d[h] ?? ''));
+    closeM('m-add-demo');
+    ['d-nom','d-desc','d-serie'].forEach(id => document.getElementById(id).value = '');
+    renderAll(); toast('Demo agregado ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+  btn.disabled = false; btn.textContent = 'Guardar';
+}
+
+function openAsignar(demoId = '') {
+  const dSel = document.getElementById('a-demo'), pSel = document.getElementById('a-pers');
+  dSel.innerHTML = '<option value="">Selecciona demo...</option>' + S.demos.filter(d => d.UbicacionActual === OFICINA).map(d => `<option value="${d.ID}">${d.Nombre}</option>`).join('');
+  pSel.innerHTML = '<option value="">Selecciona persona...</option>' + S.personas.map(p => `<option value="${p.ID}">${p.Nombre} (${p.Rol})</option>`).join('');
+  if (demoId) dSel.value = demoId;
+  openM('m-asignar');
+}
+
+async function asignarDemo() {
+  const demoId = v('a-demo'), persId = v('a-pers');
+  if (!demoId || !persId) { toast('Selecciona demo y persona', 'er'); return; }
+  const demo = S.demos.find(d => d.ID === demoId), pers = S.personas.find(p => p.ID === persId);
+  try {
+    const c = { ID: uid(), DemoID: demoId, DemoNombre: demo.Nombre, DeID: OFICINA, DeNombre: OFICINA_NOM, ParaID: persId, ParaNombre: pers.Nombre, Estado: 'Pendiente', FechaTransferencia: today(), FechaAceptacion: '', FotoBase64: '', Notas: v('a-notas'), Tipo: 'Asignacion' };
+    S.custodia.push(c);
+    await appendRow(SH.C, CH, CH.map(h => c[h] ?? ''));
+    demo.Estado = 'Pendiente'; demo.UbicacionActual = 'pend_' + persId; demo.CustodioNombre = 'Pendiente → ' + pers.Nombre;
+    const dIdx = S.demos.findIndex(d => d.ID === demoId);
+    await updateRowAt(SH.D, DH, dIdx, DH.map(h => demo[h] ?? ''));
+    closeM('m-asignar'); document.getElementById('a-notas').value = '';
+    await notif(pers, demo, 'asignacion', v('a-notas'));
+    renderAll(); toast('Asignado y notificado ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+function openAceptarDev(custId) {
+  S.pendingDevId = custId; S.photos.dev = null;
+  const c = S.custodia.find(x => x.ID === custId);
+  document.getElementById('dev-info').innerHTML = `<strong>${c.DemoNombre}</strong><br>Devuelto por: <strong>${c.DeNombre}</strong> · ${fmt(c.FechaTransferencia)}`;
+  document.getElementById('prev-dev').style.display = 'none';
+  document.getElementById('ph-dev').value = '';
+  document.getElementById('btn-cdev').disabled = true;
+  document.querySelector('#m-aceptar-dev .cam').style.display = 'block';
+  openM('m-aceptar-dev');
+}
+
+async function confirmarDev() {
+  if (!S.photos.dev || !S.pendingDevId) return;
+  const btn = document.getElementById('btn-cdev'); btn.disabled = true; btn.innerHTML = '<div class="spin"></div>';
+  try {
+    const cidx = S.custodia.findIndex(x => x.ID === S.pendingDevId);
+    S.custodia[cidx].Estado = 'Aceptado'; S.custodia[cidx].FechaAceptacion = today(); S.custodia[cidx].FotoBase64 = S.photos.dev;
+    await updateRowAt(SH.C, CH, cidx, CH.map(h => S.custodia[cidx][h] ?? ''));
+    const demoId = S.custodia[cidx].DemoID, dIdx = S.demos.findIndex(d => d.ID === demoId);
+    S.demos[dIdx].UbicacionActual = OFICINA; S.demos[dIdx].CustodioNombre = OFICINA_NOM; S.demos[dIdx].Estado = 'En Oficina';
+    await updateRowAt(SH.D, DH, dIdx, DH.map(h => S.demos[dIdx][h] ?? ''));
+    closeM('m-aceptar-dev'); renderAll(); toast('Demo recibido en oficina ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+  btn.disabled = false; btn.textContent = '✓ Demo Recibido en Oficina';
+}
+
+// ═══════════════════════════════════════════════════
+// VENDOR ACTIONS
+// ═══════════════════════════════════════════════════
+function myP() { return S.personas.find(p => p.Email.toLowerCase() === S.user?.email?.toLowerCase()); }
+function myPendientes() { const mp = myP(); if (!mp) return []; return S.custodia.filter(c => c.ParaID === mp.ID && c.Estado === 'Pendiente' && c.Tipo !== 'Devolucion'); }
+function misDemos() { const mp = myP(); if (!mp) return []; return S.demos.filter(d => d.UbicacionActual === mp.ID); }
+
+function openAceptar(custId) {
+  S.pendingCustId = custId; S.photos.ac = null;
+  const c = S.custodia.find(x => x.ID === custId);
+  document.getElementById('ac-info').innerHTML = `<strong>${c.DemoNombre}</strong><br>De: <strong>${c.DeNombre}</strong>${c.Notas ? `<br><span style="color:var(--mu)">${c.Notas}</span>` : ''}`;
+  document.getElementById('prev-ac').style.display = 'none';
+  document.getElementById('ph-ac').value = '';
+  document.getElementById('btn-ac').disabled = true;
+  document.querySelector('#m-aceptar .cam').style.display = 'block';
+  openM('m-aceptar');
+}
+
+async function aceptarDemo() {
+  if (!S.photos.ac || !S.pendingCustId) return;
+  const btn = document.getElementById('btn-ac'); btn.disabled = true; btn.innerHTML = '<div class="spin"></div>';
+  try {
+    const cidx = S.custodia.findIndex(x => x.ID === S.pendingCustId);
+    S.custodia[cidx].Estado = 'Aceptado'; S.custodia[cidx].FechaAceptacion = today(); S.custodia[cidx].FotoBase64 = S.photos.ac;
+    await updateRowAt(SH.C, CH, cidx, CH.map(h => S.custodia[cidx][h] ?? ''));
+    const mp = myP(), dIdx = S.demos.findIndex(d => d.ID === S.custodia[cidx].DemoID);
+    S.demos[dIdx].UbicacionActual = mp.ID; S.demos[dIdx].CustodioNombre = mp.Nombre; S.demos[dIdx].Estado = 'En Campo';
+    await updateRowAt(SH.D, DH, dIdx, DH.map(h => S.demos[dIdx][h] ?? ''));
+    closeM('m-aceptar'); renderVendor(); toast('Demo aceptado ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+  btn.disabled = false; btn.textContent = '✓ Confirmar Recepción';
+}
+
+function openTransferir(demoId) {
+  S.pendingTrId = demoId;
+  const demo = S.demos.find(d => d.ID === demoId), mp = myP();
+  document.getElementById('tr-info').innerHTML = `<strong>${demo.Nombre}</strong><br>Actualmente en tu custodia`;
+  document.getElementById('tr-pers').innerHTML = '<option value="">Selecciona persona...</option>' + S.personas.filter(p => p.ID !== mp?.ID).map(p => `<option value="${p.ID}">${p.Nombre} (${p.Rol})</option>`).join('');
+  document.getElementById('tr-notas').value = '';
+  openM('m-transferir');
+}
+
+async function transferirDemo() {
+  const persId = v('tr-pers'); if (!persId) { toast('Selecciona persona', 'er'); return; }
+  const demo = S.demos.find(d => d.ID === S.pendingTrId), mp = myP(), toPers = S.personas.find(p => p.ID === persId);
+  try {
+    const c = { ID: uid(), DemoID: demo.ID, DemoNombre: demo.Nombre, DeID: mp.ID, DeNombre: mp.Nombre, ParaID: persId, ParaNombre: toPers.Nombre, Estado: 'Pendiente', FechaTransferencia: today(), FechaAceptacion: '', FotoBase64: '', Notas: v('tr-notas'), Tipo: 'Transferencia' };
+    S.custodia.push(c);
+    await appendRow(SH.C, CH, CH.map(h => c[h] ?? ''));
+    demo.Estado = 'Pendiente'; demo.UbicacionActual = 'pend_' + persId; demo.CustodioNombre = 'Pendiente → ' + toPers.Nombre;
+    const dIdx = S.demos.findIndex(d => d.ID === S.pendingTrId);
+    await updateRowAt(SH.D, DH, dIdx, DH.map(h => demo[h] ?? ''));
+    closeM('m-transferir');
+    await notif(toPers, demo, 'transferencia', mp.Nombre);
+    renderVendor(); toast('Transferencia notificada ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+function openDevolver(demoId) {
+  S.pendingDvId = demoId;
+  const demo = S.demos.find(d => d.ID === demoId);
+  document.getElementById('dv-info').innerHTML = `<strong>${demo.Nombre}</strong><br>Actualmente en tu custodia`;
+  document.getElementById('dv-notas').value = '';
+  openM('m-devolver');
+}
+
+async function devolverDemo() {
+  const demo = S.demos.find(d => d.ID === S.pendingDvId), mp = myP();
+  try {
+    const c = { ID: uid(), DemoID: demo.ID, DemoNombre: demo.Nombre, DeID: mp.ID, DeNombre: mp.Nombre, ParaID: OFICINA, ParaNombre: OFICINA_NOM, Estado: 'Pendiente', FechaTransferencia: today(), FechaAceptacion: '', FotoBase64: '', Notas: v('dv-notas'), Tipo: 'Devolucion' };
+    S.custodia.push(c);
+    await appendRow(SH.C, CH, CH.map(h => c[h] ?? ''));
+    demo.Estado = 'Pendiente Devolucion'; demo.UbicacionActual = 'dev_' + mp.ID; demo.CustodioNombre = 'Devolviendo → Oficina';
+    const dIdx = S.demos.findIndex(d => d.ID === S.pendingDvId);
+    await updateRowAt(SH.D, DH, dIdx, DH.map(h => demo[h] ?? ''));
+    closeM('m-devolver');
+    for (const em of S.adminEmails) await notif({ Nombre: 'Admin', Email: em, Telefono: '' }, demo, 'devolucion');
+    renderVendor(); toast('Devolución notificada al admin ✓', 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+// ═══════════════════════════════════════════════════
+// PHOTO
+// ═══════════════════════════════════════════════════
+function photoSel(e, which) {
+  const file = e.target.files[0]; if (!file) return;
+  compressImg(file).then(url => {
+    S.photos[which] = url;
+    document.getElementById('img-' + which).src = url;
+    document.getElementById('prev-' + which).style.display = 'block';
+    e.target.closest('.mb').querySelector('.cam').style.display = 'none';
+    document.getElementById(which === 'ac' ? 'btn-ac' : 'btn-cdev').disabled = false;
+  });
+}
+
+function clearPh(which) {
+  S.photos[which] = null;
+  document.getElementById('prev-' + which).style.display = 'none';
+  document.getElementById('ph-' + which).closest('.mb').querySelector('.cam').style.display = 'block';
+  document.getElementById('ph-' + which).value = '';
+  document.getElementById(which === 'ac' ? 'btn-ac' : 'btn-cdev').disabled = true;
+}
+
+function compressImg(file) {
+  return new Promise(res => {
+    const r = new FileReader(); r.onload = e => {
+      const img = new Image(); img.onload = () => {
+        const max = 600; let w = img.width, h = img.height;
+        if (w > h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h); res(c.toDataURL('image/jpeg', .75));
+      }; img.src = e.target.result;
+    }; r.readAsDataURL(file);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+function renderAll() { renderBoard(); renderDemos(); renderPersonas(); renderSolicitudes(); renderPendientes(); renderHist(); renderConfig(); updateBadges(); }
+
+function renderBoard() {
+  const groups = {};
+  groups[OFICINA] = { label: OFICINA_NOM, demos: [], cls: 'oficina' };
+  S.personas.forEach(p => { groups[p.ID] = { label: p.Nombre, demos: [], cls: 'campo' }; });
+  S.demos.forEach(d => {
+    let loc = d.UbicacionActual;
+    if (loc.startsWith('pend_')) loc = loc.replace('pend_', '');
+    else if (loc.startsWith('dev_')) loc = loc.replace('dev_', '');
+    (groups[loc] || groups[OFICINA]).demos.push(d);
+  });
+  let html = '';
+  Object.entries(groups).forEach(([, g]) => {
+    if (!g.demos.length) return;
+    html += `<div class="bc ${g.cls}"><div class="bc-title">${g.label} <span style="font-size:11px;color:var(--mu)">(${g.demos.length})</span></div>`;
+    g.demos.forEach(d => html += `<div class="bc-demo"><span>${d.Nombre}</span><span class="badge ${d.Estado === 'En Oficina' ? 'b-ok' : d.Estado === 'En Campo' ? 'b-ac' : 'b-wn'}" style="font-size:10px">${d.Estado === 'En Oficina' ? 'Oficina' : d.Estado === 'En Campo' ? 'Campo' : 'Pend.'}</span></div>`);
+    html += '</div>';
+  });
+  document.getElementById('board').innerHTML = `<div class="board">${html || '<p style="color:var(--mu);font-size:13px">Sin demos creados aún.</p>'}</div>`;
+  const enOf = S.demos.filter(d => d.UbicacionActual === OFICINA).length;
+  const enCa = S.demos.filter(d => d.Estado === 'En Campo').length;
+  const pe = S.demos.filter(d => d.Estado.includes('Pendiente')).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="sc"><div class="sv" style="color:var(--ok)">${enOf}</div><div class="sl2">En Oficina</div></div>
+    <div class="sc"><div class="sv" style="color:var(--ac)">${enCa}</div><div class="sl2">En Campo</div></div>
+    <div class="sc"><div class="sv" style="color:var(--wn)">${pe}</div><div class="sl2">Pendientes</div></div>
+    <div class="sc"><div class="sv">${S.demos.length}</div><div class="sl2">Total</div></div>`;
+}
+
+function renderDemos() {
+  const tb = document.getElementById('tbd');
+  if (!S.demos.length) { tb.innerHTML = `<tr><td colspan="4"><div class="es"><div class="es-i">📋</div><p>Sin demos.</p></div></td></tr>`; return; }
+  tb.innerHTML = S.demos.map(d => `<tr>
+    <td><strong>${d.Nombre}</strong>${d.NumSerie ? `<br><span style="font-size:11px;color:var(--mu)">${d.NumSerie}</span>` : ''}</td>
+    <td style="font-size:13px">${d.CustodioNombre}</td>
+    <td><span class="badge ${d.Estado === 'En Oficina' ? 'b-ok' : d.Estado === 'En Campo' ? 'b-ac' : 'b-wn'}">${d.Estado}</span></td>
+    <td><div style="display:flex;gap:5px;flex-wrap:wrap">
+      ${d.UbicacionActual === OFICINA ? `<button class="btn bp bxs" onclick="openAsignar('${d.ID}')">Asignar</button>` : ''}
+      <button class="btn bd2 bxs" onclick="delDemo('${d.ID}')">×</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderPersonas() {
+  const tb = document.getElementById('tbp');
+  if (!S.personas.length) { tb.innerHTML = `<tr><td colspan="6"><div class="es"><div class="es-i">👥</div><p>Sin personas aprobadas aún.</p></div></td></tr>`; return; }
+  tb.innerHTML = S.personas.map(p => `<tr>
+    <td><strong>${p.Nombre}</strong></td>
+    <td style="font-size:12px">${p.Email}</td>
+    <td class="hm" style="font-size:12px">${p.Telefono || '—'}</td>
+    <td><span class="badge ${p.Rol === 'BL' ? 'b-bl' : 'b-vd'}">${p.Rol}</span></td>
+    <td>${S.demos.filter(d => d.UbicacionActual === p.ID).length}</td>
+    <td><button class="btn bd2 bxs" onclick="delPers('${p.ID}')">×</button></td>
+  </tr>`).join('');
+}
+
+function renderSolicitudes() {
+  const pend = S.solicitudes.filter(s => s.Estado === 'Pendiente');
+  const hist = S.solicitudes.filter(s => s.Estado !== 'Pendiente');
+  let html = '';
+  if (pend.length) {
+    html += `<div class="notice">🔔 ${pend.length} solicitud(es) esperando tu aprobación.</div>`;
+    pend.forEach(s => { html += `<div class="card" style="padding:16px;margin-bottom:10px"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">${s.Nombre}</div><div style="font-size:12px;color:var(--mu);margin:3px 0">${s.Email} · ${s.Telefono || 'sin tel.'}</div><span class="badge b-vd">${s.Rol}</span><span style="font-size:11px;color:var(--mu);margin-left:8px">${fmt(s.FechaAlta)}</span></div><div style="display:flex;gap:8px"><button class="btn bok bsm" onclick="aprobarSolicitud('${s.ID}')">✓ Aprobar</button><button class="btn bd2 bsm" onclick="rechazarSolicitud('${s.ID}')">✕ Rechazar</button></div></div></div>`; });
+  }
+  if (hist.length) {
+    html += `<div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">HISTORIAL</div>`;
+    hist.forEach(s => { html += `<div class="card" style="padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px">${s.Nombre} · ${s.Rol}</span><span class="badge ${s.Estado === 'Aprobado' ? 'b-ok' : 'b-er'}">${s.Estado}</span></div>`; });
+  }
+  if (!html) html = '<div class="es"><div class="es-i">✅</div><p>Sin solicitudes pendientes.</p></div>';
+  document.getElementById('sol-list').innerHTML = html;
+}
+
+function renderPendientes() {
+  const devPend = S.custodia.filter(c => c.Estado === 'Pendiente' && c.Tipo === 'Devolucion');
+  const asigPend = S.custodia.filter(c => c.Estado === 'Pendiente' && c.Tipo !== 'Devolucion');
+  let html = '';
+  if (devPend.length) {
+    html += `<div class="notice">📬 ${devPend.length} demo(s) esperando confirmación de recepción en oficina.</div>`;
+    devPend.forEach(c => { html += `<div class="card" style="padding:14px;margin-bottom:10px"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><strong>${c.DemoNombre}</strong><br><span style="font-size:12px;color:var(--mu)">Devuelto por: ${c.DeNombre} · ${fmt(c.FechaTransferencia)}</span></div><button class="btn bok bsm" onclick="openAceptarDev('${c.ID}')">📷 Confirmar Recepción</button></div></div>`; });
+  }
+  if (asigPend.length) {
+    html += `<div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">ESPERANDO ACEPTACIÓN</div>`;
+    asigPend.forEach(c => { html += `<div class="card" style="padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><strong>${c.DemoNombre}</strong><br><span style="font-size:12px;color:var(--mu)">→ ${c.ParaNombre} · ${fmt(c.FechaTransferencia)}</span></div><span class="badge b-wn">Pendiente</span></div>`; });
+  }
+  if (!html) html = '<div class="es"><div class="es-i">✅</div><p>Sin pendientes.</p></div>';
+  document.getElementById('pend-list').innerHTML = html;
+}
+
+function renderHist() {
+  const hist = [...S.custodia].reverse();
+  const icons = { Asignacion: '📤', Transferencia: '🔄', Devolucion: '📥' };
+  document.getElementById('hist-list').innerHTML = hist.length
+    ? hist.map(c => `<div class="hi"><div style="width:32px;height:32px;border-radius:50%;background:${c.Estado === 'Aceptado' ? 'var(--okb)' : 'var(--wnb)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${icons[c.Tipo] || '📋'}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;margin-bottom:2px">${c.DemoNombre} · ${c.DeNombre} → ${c.ParaNombre}</div><div style="font-size:11.5px;color:var(--mu)">${c.Tipo} · ${fmt(c.FechaTransferencia)} · <span class="badge ${c.Estado === 'Aceptado' ? 'b-ok' : 'b-wn'}" style="padding:1px 7px;font-size:10px">${c.Estado}</span></div>${c.Notas ? `<div style="font-size:11.5px;color:var(--t2);margin-top:2px">${c.Notas}</div>` : ''}${c.FotoBase64 ? `<button class="btn bg2 bxs" style="margin-top:4px" onclick="verFoto('${c.ID}')">📷 Ver foto</button>` : ''}</div></div>`).join('')
+    : '<div class="es"><div class="es-i">📜</div><p>Sin historial.</p></div>';
+}
+
+function renderConfig() {
+  document.getElementById('cfg-ejs').value = S.emailjsCfg.service || '';
+  document.getElementById('cfg-ejt').value = S.emailjsCfg.template || '';
+  document.getElementById('cfg-ejk').value = S.emailjsCfg.key || '';
+  const me = S.user?.email?.toLowerCase();
+  document.getElementById('admins-list').innerHTML = S.adminEmails.length
+    ? S.adminEmails.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="flex:1;font-size:13px">${e}${e === me ? ' <span style="font-size:10px;color:var(--ac);font-weight:700">(tú)</span>' : ''}</span>${S.adminEmails.length > 1 ? `<button class="btn bd2 bxs" onclick="removeAdmin('${e}')">Quitar</button>` : '<span style="font-size:11px;color:var(--mu)">Único admin</span>'}</div>`).join('')
+    : '<p style="font-size:13px;color:var(--mu)">Sin admins.</p>';
+}
+
+function updateBadges() {
+  const sp = S.solicitudes.filter(s => s.Estado === 'Pendiente').length;
+  const dp = S.custodia.filter(c => c.Estado === 'Pendiente' && c.Tipo === 'Devolucion').length;
+  const ds = document.getElementById('dot-sol'), dd = document.getElementById('dot-pend');
+  ds.style.display = sp ? 'inline-block' : 'none'; ds.textContent = sp;
+  dd.style.display = dp ? 'inline-block' : 'none'; dd.textContent = dp;
+}
+
+function renderVendor() {
+  const pend = myPendientes(), mine = misDemos();
+  let ph = '', mh = '';
+  if (pend.length) {
+    ph = `<div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚡ PENDIENTE DE ACEPTAR</div>`;
+    pend.forEach(c => { ph += `<div class="dc pendiente"><div class="dc-name">${c.DemoNombre}</div><div class="dc-meta">De: ${c.DeNombre} · ${fmt(c.FechaTransferencia)}${c.Notas ? ' · ' + c.Notas : ''}</div><button class="btn bok bsm" onclick="openAceptar('${c.ID}')">📷 Aceptar Demo</button></div>`; });
+  }
+  if (mine.length) {
+    mh = `<div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin:${pend.length ? '14px' : 0} 0 8px">📦 EN MI CUSTODIA</div>`;
+    mine.forEach(d => { mh += `<div class="dc en-campo"><div class="dc-name">${d.Nombre}</div><div class="dc-meta">${d.NumSerie ? d.NumSerie + ' · ' : ''}En tu custodia</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bs bsm" onclick="openTransferir('${d.ID}')">🔄 Transferir</button><button class="btn bsm" style="background:#8B5CF6;color:#fff" onclick="openDevolver('${d.ID}')">📥 Devolver</button></div></div>`; });
+  }
+  if (!pend.length && !mine.length) ph = '<div class="es" style="margin-top:40px"><div class="es-i">📋</div><p>No tienes demos asignados.</p></div>';
+  document.getElementById('v-pend-sec').innerHTML = ph;
+  document.getElementById('v-mine-sec').innerHTML = mh;
+}
+
+// ═══════════════════════════════════════════════════
+// MISC
+// ═══════════════════════════════════════════════════
+async function delDemo(id) {
+  if (!confirm('¿Eliminar este demo?')) return;
+  const idx = S.demos.findIndex(d => d.ID === id);
+  if (idx === -1) return;
+  // Mark as deleted by clearing the row — simplest approach
+  S.demos.splice(idx, 1);
+  toast('Demo eliminado localmente. Bórralo también del Excel manualmente.', '');
+  renderAll();
+}
+
+async function delPers(id) {
+  if (!confirm('¿Eliminar esta persona?')) return;
+  S.personas = S.personas.filter(p => p.ID !== id);
+  toast('Persona eliminada localmente. Bórrala también del Excel manualmente.', '');
+  renderAll();
+}
+
+function verFoto(custId) {
+  const c = S.custodia.find(x => x.ID === custId); if (!c?.FotoBase64) return;
+  document.getElementById('foto-img').src = c.FotoBase64;
+  document.getElementById('foto-info').textContent = `${c.DemoNombre} · ${c.DeNombre} → ${c.ParaNombre} · ${fmt(c.FechaAceptacion)}`;
+  openM('m-foto');
+}
+
+function filterT(tid, iid) { const q = document.getElementById(iid).value.toLowerCase(); document.querySelectorAll(`#${tid} tbody tr`).forEach(tr => { tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none'; }); }
+
+const vtitles = { dashboard: 'Ubicaciones', demos: 'Demos', personas: 'Personas', solicitudes: 'Solicitudes', pendientes: 'Custodia Pendiente', historial: 'Historial', config: 'Configuración' };
+
+function nav(view) {
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(x => x.classList.remove('active'));
+  document.getElementById('v-' + view)?.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n => { if (n.getAttribute('onclick')?.includes(`'${view}'`)) n.classList.add('active'); });
+  document.getElementById('tbtitle').textContent = vtitles[view] || view;
+  closeSb(); renderAll();
+}
+
+function openSb() { document.getElementById('sb').classList.add('open'); document.getElementById('so').classList.add('open'); }
+function closeSb() { document.getElementById('sb').classList.remove('open'); document.getElementById('so').classList.remove('open'); }
+function openM(id) { document.getElementById(id).classList.add('open'); }
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.mo.open').forEach(m => m.classList.remove('open')); });
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id)?.classList.add('active'); }
+function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function fmt(d) { if (!d) return '—'; try { return new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }); } catch { return d; } }
+function toast(msg, type = '') { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (type ? ' ' + type : ''); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3200); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+function today() { return new Date().toISOString().split('T')[0]; }
+</script>
+</body>
+</html>
