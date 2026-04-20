@@ -412,7 +412,7 @@ tr:hover td{background:rgba(26,107,255,.015)}
 const AZURE_CLIENT_ID = '860d8ba4-31a6-4753-afae-5fcd9e98a3ea';
 const AZURE_TENANT_ID = 'b082fba7-f033-4ac3-b784-901ee50db4fb';
 const EXCEL_FILENAME  = 'Demo Manager.xlsx';
-const SCOPES = ['Files.ReadWrite'];
+const SCOPES = ['User.Read', 'Files.ReadWrite', 'offline_access'];
 const OFICINA = 'ABSA_AMAPOLA';
 const OFICINA_NOM = 'ABSA Amapola';
 const SH = { D:'Demos', P:'Personas', C:'Custodia', SOL:'Solicitudes', CFG:'Config' };
@@ -442,13 +442,15 @@ let msalInst = null;
 // INIT
 // ═══════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  console.log('Demo Manager: DOM cargado');
   setLoad('Cargando Microsoft Auth...');
   try {
+    if (!window.msal) throw new Error('No cargó la librería MSAL');
     msalInst = new msal.PublicClientApplication({
       auth: {
         clientId: AZURE_CLIENT_ID,
         authority: `https://login.microsoftonline.com/${AZURE_TENANT_ID}`,
-        redirectUri: location.href.split('?')[0].split('#')[0]
+        redirectUri: `${window.location.origin}${window.location.pathname}`
       }
     });
     msalInst.handleRedirectPromise()
@@ -466,7 +468,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       })
       .catch(e => { toast('Error auth: ' + e.message, 'er'); show('sl'); });
-  } catch(e) { toast('Error iniciando app: ' + e.message, 'er'); show('sl'); }
+  } catch(e) { console.error('Error iniciando app', e); toast('Error iniciando app: ' + e.message, 'er'); show('sl'); }
 });
 
 function setLoad(msg) {
@@ -594,7 +596,7 @@ async function resolveFileId() {
   // Fallback: try root path
   const item = await gfetch(`/me/drive/root:/${encodeURIComponent(EXCEL_FILENAME)}`);
   if (item?.id) { S.fileId = item.id; return; }
-  throw new Error('No se encontró el archivo "' + EXCEL_FILENAME + '" en OneDrive.');
+  throw new Error('No se encontró el archivo "' + EXCEL_FILENAME + '" en OneDrive/SharePoint personal del usuario autenticado.');
 }
 
 const wb = () => `/me/drive/items/${S.fileId}/workbook/worksheets`;
