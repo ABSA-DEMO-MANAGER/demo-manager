@@ -792,17 +792,20 @@ async function addDemo() {
 
 function openAsignar(demoId = '') {
   const dSel = document.getElementById('a-demo'), pSel = document.getElementById('a-pers');
-  dSel.innerHTML = '<option value="">Selecciona demo...</option>' + S.demos.filter(d => d.UbicacionActual === OFICINA).map(d => `<option value="${d.ID}">${d.Nombre}</option>`).join('');
-  pSel.innerHTML = '<option value="">Selecciona persona...</option>' + S.personas.map(p => `<option value="${p.ID}">${p.Nombre} (${p.Rol})</option>`).join('');
-  if (demoId) dSel.value = demoId;
+  const disponibles = S.demos.filter(d => String(d.UbicacionActual).trim() === OFICINA);
+  dSel.innerHTML = '<option value="">Selecciona demo...</option>' + disponibles.map(d => `<option value="${String(d.ID).trim()}">${d.Nombre}</option>`).join('');
+  pSel.innerHTML = '<option value="">Selecciona persona...</option>' + S.personas.map(p => `<option value="${String(p.ID).trim()}">${p.Nombre} (${p.Rol})</option>`).join('');
+  if (demoId) dSel.value = String(demoId).trim();
   openM('m-asignar');
 }
 
 async function asignarDemo() {
   const demoId = v('a-demo'), persId = v('a-pers');
   if (!demoId || !persId) { toast('Selecciona demo y persona', 'er'); return; }
-  const demo = S.demos.find(d => d.ID === demoId), pers = S.personas.find(p => p.ID === persId);
-  try {
+  const demo = S.demos.find(d => String(d.ID).trim() === demoId);
+  const pers = S.personas.find(p => String(p.ID).trim() === persId);
+  if (!demo) { toast('Demo no encontrado. Usa el botón ↻ y vuelve a intentar.', 'er'); return; }
+  if (!pers) { toast('Persona no encontrada. Usa el botón ↻ y vuelve a intentar.', 'er'); return; }
     const c = { ID: uid(), DemoID: demoId, DemoNombre: demo.Nombre, DeID: OFICINA, DeNombre: OFICINA_NOM, ParaID: persId, ParaNombre: pers.Nombre, Estado: 'Pendiente', FechaTransferencia: today(), FechaAceptacion: '', FotoBase64: '', Notas: v('a-notas'), Tipo: 'Asignacion' };
     S.custodia.push(c);
     await appendRow(SH.C, CH, CH.map(h => c[h] ?? ''));
