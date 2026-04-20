@@ -829,26 +829,32 @@ function openAsignar(demoId = '') {
 }
 
 async function asignarDemo() {
-  const demoId = v('a-demo'), persId = v('a-pers');
-  if (!demoId || !persId) { 
-    toast('Selecciona demo y persona', 'er'); 
-    return; 
+  const demoId = document.getElementById('a-demo').value.trim();
+  const persId = document.getElementById('a-pers').value.trim();
+
+  console.log('Asignando demoId:', demoId, 'persId:', persId);
+
+  if (!demoId || !persId) {
+    toast('Selecciona demo y persona', 'er');
+    return;
   }
 
   const demo = S.demos.find(d => String(d.ID).trim() === demoId);
   const pers = S.personas.find(p => String(p.ID).trim() === persId);
 
-  if (!demo) { 
-    toast('Demo no encontrado. Usa el botón ↻ y vuelve a intentar.', 'er'); 
-    return; 
+  if (!demo) {
+    toast('Demo no encontrado. Usa el botón ↻ y vuelve a intentar.', 'er');
+    return;
   }
 
-  if (!pers) { 
-    toast('Persona no encontrada. Usa el botón ↻ y vuelve a intentar.', 'er'); 
-    return; 
+  if (!pers) {
+    toast('Persona no encontrada. Usa el botón ↻ y vuelve a intentar.', 'er');
+    return;
   }
 
   try {
+    const notas = document.getElementById('a-notas').value.trim();
+
     const c = {
       ID: uid(),
       DemoID: demoId,
@@ -861,7 +867,7 @@ async function asignarDemo() {
       FechaTransferencia: today(),
       FechaAceptacion: '',
       FotoBase64: '',
-      Notas: v('a-notas'),
+      Notas: notas,
       Tipo: 'Asignacion'
     };
 
@@ -872,10 +878,9 @@ async function asignarDemo() {
     demo.UbicacionActual = 'pend_' + persId;
     demo.CustodioNombre = 'Pendiente → ' + pers.Nombre;
 
-    const dIdx = S.demos.findIndex(d => d.ID === demoId);
+    const dIdx = S.demos.findIndex(d => String(d.ID).trim() === demoId);
     await updateRowAt(SH.D, DH, dIdx, DH.map(h => demo[h] ?? ''));
 
-    const notas = v('a-notas');
     closeM('m-asignar');
     document.getElementById('a-notas').value = '';
 
@@ -883,6 +888,7 @@ async function asignarDemo() {
     renderAll();
     toast('Asignado y notificado ✓', 'ok');
   } catch (e) {
+    console.error(e);
     toast('Error: ' + e.message, 'er');
   }
 }
