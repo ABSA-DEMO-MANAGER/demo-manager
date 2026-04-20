@@ -793,11 +793,38 @@ async function addDemo() {
 }
 
 function openAsignar(demoId = '') {
-  const dSel = document.getElementById('a-demo'), pSel = document.getElementById('a-pers');
+  const dSel = document.getElementById('a-demo');
+  const pSel = document.getElementById('a-pers');
+
   const disponibles = S.demos.filter(d => String(d.UbicacionActual).trim() === OFICINA);
-  dSel.innerHTML = '<option value="">Selecciona demo...</option>' + disponibles.map(d => `<option value="${String(d.ID).trim()}">${d.Nombre}</option>`).join('');
-  pSel.innerHTML = '<option value="">Selecciona persona...</option>' + S.personas.map(p => `<option value="${String(p.ID).trim()}">${p.Nombre} (${p.Rol})</option>`).join('');
-  if (demoId) dSel.value = String(demoId).trim();
+  const personas = S.personas || [];
+
+  dSel.innerHTML =
+    '<option value="">Selecciona demo...</option>' +
+    disponibles.map(d => `<option value="${String(d.ID).trim()}">${d.Nombre}</option>`).join('');
+
+  pSel.innerHTML =
+    '<option value="">Selecciona persona...</option>' +
+    personas.map(p => `<option value="${String(p.ID).trim()}">${p.Nombre} (${p.Rol})</option>`).join('');
+
+  if (demoId) {
+    dSel.value = String(demoId).trim();
+  }
+
+  // Auto seleccionar si solo hay una opción disponible
+  if (!demoId && disponibles.length === 1) {
+    dSel.value = String(disponibles[0].ID).trim();
+  }
+
+  if (personas.length === 1) {
+    pSel.value = String(personas[0].ID).trim();
+  }
+
+  console.log('Demo seleccionado:', dSel.value);
+  console.log('Persona seleccionada:', pSel.value);
+  console.log('Demos disponibles:', disponibles);
+  console.log('Personas disponibles:', personas);
+
   openM('m-asignar');
 }
 
