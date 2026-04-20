@@ -801,21 +801,61 @@ function openAsignar(demoId = '') {
 
 async function asignarDemo() {
   const demoId = v('a-demo'), persId = v('a-pers');
-  if (!demoId || !persId) { toast('Selecciona demo y persona', 'er'); return; }
+  if (!demoId || !persId) { 
+    toast('Selecciona demo y persona', 'er'); 
+    return; 
+  }
+
   const demo = S.demos.find(d => String(d.ID).trim() === demoId);
   const pers = S.personas.find(p => String(p.ID).trim() === persId);
-  if (!demo) { toast('Demo no encontrado. Usa el botón ↻ y vuelve a intentar.', 'er'); return; }
-  if (!pers) { toast('Persona no encontrada. Usa el botón ↻ y vuelve a intentar.', 'er'); return; }
-    const c = { ID: uid(), DemoID: demoId, DemoNombre: demo.Nombre, DeID: OFICINA, DeNombre: OFICINA_NOM, ParaID: persId, ParaNombre: pers.Nombre, Estado: 'Pendiente', FechaTransferencia: today(), FechaAceptacion: '', FotoBase64: '', Notas: v('a-notas'), Tipo: 'Asignacion' };
+
+  if (!demo) { 
+    toast('Demo no encontrado. Usa el botón ↻ y vuelve a intentar.', 'er'); 
+    return; 
+  }
+
+  if (!pers) { 
+    toast('Persona no encontrada. Usa el botón ↻ y vuelve a intentar.', 'er'); 
+    return; 
+  }
+
+  try {
+    const c = {
+      ID: uid(),
+      DemoID: demoId,
+      DemoNombre: demo.Nombre,
+      DeID: OFICINA,
+      DeNombre: OFICINA_NOM,
+      ParaID: persId,
+      ParaNombre: pers.Nombre,
+      Estado: 'Pendiente',
+      FechaTransferencia: today(),
+      FechaAceptacion: '',
+      FotoBase64: '',
+      Notas: v('a-notas'),
+      Tipo: 'Asignacion'
+    };
+
     S.custodia.push(c);
     await appendRow(SH.C, CH, CH.map(h => c[h] ?? ''));
-    demo.Estado = 'Pendiente'; demo.UbicacionActual = 'pend_' + persId; demo.CustodioNombre = 'Pendiente → ' + pers.Nombre;
+
+    demo.Estado = 'Pendiente';
+    demo.UbicacionActual = 'pend_' + persId;
+    demo.CustodioNombre = 'Pendiente → ' + pers.Nombre;
+
     const dIdx = S.demos.findIndex(d => d.ID === demoId);
     await updateRowAt(SH.D, DH, dIdx, DH.map(h => demo[h] ?? ''));
-    closeM('m-asignar'); document.getElementById('a-notas').value = '';
-    await notif(pers, demo, 'asignacion', v('a-notas'));
-    renderAll(); toast('Asignado y notificado ✓', 'ok');
-  } catch(e) { toast('Error: ' + e.message, 'er'); }
+
+    const notas = v('a-notas');
+    closeM('m-asignar');
+    document.getElementById('a-notas').value = '';
+
+    await notif(pers, demo, 'asignacion', notas);
+    renderAll();
+    toast('Asignado y notificado ✓', 'ok');
+  } catch (e) {
+    toast('Error: ' + e.message, 'er');
+  }
 }
 
 function openAceptarDev(custId) {
