@@ -267,7 +267,10 @@ tr:hover td{background:rgba(26,107,255,.015)}
       </div>
       <div id="v-historial" class="view">
         <div class="ph"><div class="pt">Historial de custodia</div></div>
-        <div class="card"><div style="padding:8px 16px" id="hist-list"></div></div>
+        <div style="margin-bottom:14px">
+          <input class="si2" id="sh" placeholder="Buscar demo..." oninput="renderHist()" style="width:100%;max-width:320px">
+        </div>
+        <div id="hist-list"></div>
       </div>
       <div id="v-config" class="view">
         <div class="pt" style="margin-bottom:16px">Configuración</div>
@@ -328,7 +331,7 @@ tr:hover td{background:rgba(26,107,255,.015)}
     <div class="notice">📦 El demo quedará pendiente hasta que el receptor acepte con foto.</div>
     <div class="fg"><label>Demo *</label><select id="a-demo"><option value="">Selecciona...</option></select></div>
     <div class="fg"><label>Asignar a *</label><select id="a-pers"><option value="">Selecciona...</option></select></div>
-    <div class="fg"><label>Notas</label><textarea id="a-notas" rows="2"></textarea></div>
+    <div class="fg"><label>💬 Comentarios / Instrucciones</label><textarea id="a-notas" rows="3" placeholder="Ej: Llevar el cargador, presentar en sala 3, etc."></textarea><div class="hint">Estos comentarios serán visibles para el receptor y quedarán en el historial.</div></div>
   </div>
   <div class="mf"><button class="btn bs" onclick="closeM('m-asignar')">Cancelar</button><button class="btn bp" onclick="asignarDemo()">Asignar y Notificar</button></div>
 </div></div>
@@ -360,7 +363,7 @@ tr:hover td{background:rgba(26,107,255,.015)}
   <div class="mb">
     <div id="tr-info" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
     <div class="fg"><label>Transferir a *</label><select id="tr-pers"><option value="">Selecciona...</option></select></div>
-    <div class="fg"><label>Notas</label><textarea id="tr-notas" rows="2"></textarea></div>
+    <div class="fg"><label>💬 Comentarios / Motivo</label><textarea id="tr-notas" rows="3" placeholder="Ej: Cubre visita con cliente, incluye manual de usuario, etc."></textarea><div class="hint">Estos comentarios serán visibles para el receptor y quedarán en el historial.</div></div>
   </div>
   <div class="mf"><button class="btn bs" onclick="closeM('m-transferir')">Cancelar</button><button class="btn bp" onclick="transferirDemo()">Transferir y Notificar</button></div>
 </div></div>
@@ -370,7 +373,7 @@ tr:hover td{background:rgba(26,107,255,.015)}
   <div class="mb">
     <div id="dv-info" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px"></div>
     <div class="notice">📬 Se notificará al administrador para confirmar la recepción.</div>
-    <div class="fg"><label>Notas</label><textarea id="dv-notas" rows="2"></textarea></div>
+    <div class="fg"><label>💬 Comentarios / Motivo de devolución</label><textarea id="dv-notas" rows="3" placeholder="Ej: Demo completado, equipo en buen estado, falta el cable HDMI, etc."></textarea><div class="hint">Estos comentarios quedarán en el historial de custodia.</div></div>
   </div>
   <div class="mf"><button class="btn bs" onclick="closeM('m-devolver')">Cancelar</button><button class="btn bp" onclick="devolverDemo()">Notificar Devolución</button></div>
 </div></div>
@@ -917,11 +920,83 @@ function renderPendientes() {
 }
 
 function renderHist() {
-  const hist = [...S.custodia].reverse();
+  const q = (document.getElementById('sh')?.value || '').toLowerCase();
   const icons = { Asignacion: '📤', Transferencia: '🔄', Devolucion: '📥' };
-  document.getElementById('hist-list').innerHTML = hist.length
-    ? hist.map(c => `<div class="hi"><div style="width:32px;height:32px;border-radius:50%;background:${c.estado === 'Aceptado' ? 'var(--okb)' : 'var(--wnb)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${icons[c.tipo] || '📋'}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;margin-bottom:2px">${c.demoNombre} · ${c.deNombre} → ${c.paraNombre}</div><div style="font-size:11.5px;color:var(--mu)">${c.tipo} · ${fmt(c.fecha)} · <span class="badge ${c.estado === 'Aceptado' ? 'b-ok' : 'b-wn'}" style="padding:1px 7px;font-size:10px">${c.estado}</span></div>${c.notas ? `<div style="font-size:11.5px;color:var(--t2);margin-top:2px">${c.notas}</div>` : ''}${c.foto ? `<button class="btn bg2 bxs" style="margin-top:4px" onclick="verFoto('${c.id}')">📷 Ver foto</button>` : ''}</div></div>`).join('')
-    : '<div class="es"><div class="es-i">📜</div><p>Sin historial.</p></div>';
+
+  // Group custodia by demoId
+  const groups = {};
+  S.custodia.forEach(c => {
+    if (!groups[c.demoId]) groups[c.demoId] = { nombre: c.demoNombre, eventos: [] };
+    groups[c.demoId].eventos.push(c);
+  });
+
+  // Filter by search
+  const filtered = Object.entries(groups).filter(([, g]) => g.nombre?.toLowerCase().includes(q));
+
+  if (!filtered.length) {
+    document.getElementById('hist-list').innerHTML = '<div class="es"><div class="es-i">📜</div><p>Sin historial.</p></div>';
+    return;
+  }
+
+  document.getElementById('hist-list').innerHTML = filtered.map(([demoId, g]) => {
+    const total = g.eventos.length;
+    const ultimo = [...g.eventos].sort((a, b) => b.fecha?.localeCompare(a.fecha))[0];
+    const demo = S.demos.find(d => d.id === demoId);
+    const estadoBadge = demo
+      ? `<span class="badge ${demo.estado === 'En Oficina' ? 'b-ok' : demo.estado === 'En Campo' ? 'b-ac' : 'b-wn'}" style="font-size:11px">${demo.estado}</span>`
+      : '';
+
+    const eventosHtml = [...g.eventos].reverse().map(c => `
+      <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd)">
+        <div style="width:32px;height:32px;border-radius:50%;background:${c.estado === 'Aceptado' ? 'var(--okb)' : 'var(--wnb)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${icons[c.tipo] || '📋'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">${c.deNombre} → ${c.paraNombre}</div>
+          <div style="font-size:11.5px;color:var(--mu);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span>${c.tipo}</span>
+            <span>·</span>
+            <span>${fmt(c.fecha)}</span>
+            <span>·</span>
+            <span class="badge ${c.estado === 'Aceptado' ? 'b-ok' : 'b-wn'}" style="padding:1px 7px;font-size:10px">${c.estado}</span>
+            ${c.fechaAceptacion ? `<span>· Aceptado: ${fmt(c.fechaAceptacion)}</span>` : ''}
+          </div>
+          ${c.notas ? `<div style="font-size:12px;color:var(--t2);margin-top:5px;background:var(--bg);border-radius:6px;padding:6px 10px">💬 ${c.notas}</div>` : ''}
+          ${c.foto ? `<div style="margin-top:8px"><img src="${c.foto}" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid var(--bd);cursor:pointer" onclick="verFotoUrl('${c.id}')"></div>` : ''}
+        </div>
+      </div>`).join('');
+
+    return `
+      <div class="card" style="margin-bottom:12px;overflow:hidden">
+        <div onclick="toggleHist('h_${demoId}')" style="padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;user-select:none">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">${g.nombre}</div>
+            <div style="font-size:12px;color:var(--mu);margin-top:2px">${total} evento${total !== 1 ? 's' : ''} · Último: ${fmt(ultimo?.fecha)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${estadoBadge}
+            <span id="arrow_${demoId}" style="color:var(--mu);font-size:18px;transition:transform .2s">▸</span>
+          </div>
+        </div>
+        <div id="h_${demoId}" style="display:none;padding:0 18px 14px;border-top:1px solid var(--bd)">
+          ${eventosHtml}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleHist(id) {
+  const el = document.getElementById(id);
+  const demoId = id.replace('h_', '');
+  const arrow = document.getElementById('arrow_' + demoId);
+  const open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? '' : 'rotate(90deg)';
+}
+
+function verFotoUrl(custId) {
+  const c = S.custodia.find(x => x.id === custId); if (!c?.foto) return;
+  document.getElementById('foto-img').src = c.foto;
+  document.getElementById('foto-info').textContent = `${c.demoNombre} · ${c.deNombre} → ${c.paraNombre} · ${fmt(c.fechaAceptacion)}`;
+  openM('m-foto');
 }
 
 function renderConfig() {
