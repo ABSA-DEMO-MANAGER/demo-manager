@@ -304,7 +304,11 @@ tr:hover td{background:rgba(26,107,255,.015)}
       <button class="btn bxs" style="background:rgba(255,255,255,.15);color:#fff;border:none" onclick="doLogout()">Salir</button>
     </div>
   </div>
-  <div class="vc"><div id="v-pend-sec"></div><div id="v-mine-sec"></div></div>
+  <div class="vc">
+    <div id="v-pend-sec"></div>
+    <div id="v-mine-sec"></div>
+    <div id="v-all-sec"></div>
+  </div>
 </div>
 
 <!-- MODALS -->
@@ -940,18 +944,43 @@ function updateBadges() {
 
 function renderVendor() {
   const pend = myPendientes(), mine = misDemos();
-  let ph = '', mh = '';
+  let ph = '', mh = '', ah = '';
+
+  // ── Pendientes de aceptar ──
   if (pend.length) {
     ph = `<div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚡ PENDIENTE DE ACEPTAR</div>`;
     pend.forEach(c => { ph += `<div class="dc pendiente"><div class="dc-name">${c.demoNombre}</div><div class="dc-meta">De: ${c.deNombre} · ${fmt(c.fecha)}${c.notas ? ' · ' + c.notas : ''}</div><button class="btn bok bsm" onclick="openAceptar('${c.id}')">📷 Aceptar Demo</button></div>`; });
   }
+
+  // ── En mi custodia ──
   if (mine.length) {
     mh = `<div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin:${pend.length ? '14px' : 0} 0 8px">📦 EN MI CUSTODIA</div>`;
     mine.forEach(d => { mh += `<div class="dc en-campo"><div class="dc-name">${d.nombre}</div><div class="dc-meta">${d.serie ? d.serie + ' · ' : ''}En tu custodia</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn bs bsm" onclick="openTransferir('${d.id}')">🔄 Transferir</button><button class="btn bsm" style="background:#8B5CF6;color:#fff" onclick="openDevolver('${d.id}')">📥 Devolver</button></div></div>`; });
   }
-  if (!pend.length && !mine.length) ph = '<div class="es" style="margin-top:40px"><div class="es-i">📋</div><p>No tienes demos asignados.</p></div>';
+
+  if (!pend.length && !mine.length) ph = '<div class="es" style="margin-top:24px"><div class="es-i">📋</div><p>No tienes demos asignados.</p></div>';
+
+  // ── Todos los demos (solo lectura) ──
+  ah = `<div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 8px">📍 TODOS LOS DEMOS</div>`;
+  if (S.demos.length) {
+    ah += S.demos.map(d => {
+      const stColor = d.estado === 'En Oficina' ? 'var(--ok)' : d.estado === 'En Campo' ? 'var(--ac)' : 'var(--wn)';
+      const stBg = d.estado === 'En Oficina' ? 'var(--okb)' : d.estado === 'En Campo' ? 'var(--al)' : 'var(--wnb)';
+      return `<div class="card" style="padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:600;font-size:13.5px">${d.nombre}</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:2px">${d.serie ? d.serie + ' · ' : ''}${d.custodio}</div>
+        </div>
+        <span class="badge" style="background:${stBg};color:${stColor}">${d.estado}</span>
+      </div>`;
+    }).join('');
+  } else {
+    ah += '<div class="es" style="padding:24px"><div class="es-i">📋</div><p>Sin demos registrados.</p></div>';
+  }
+
   document.getElementById('v-pend-sec').innerHTML = ph;
   document.getElementById('v-mine-sec').innerHTML = mh;
+  document.getElementById('v-all-sec').innerHTML = ah;
 }
 
 function verFoto(custId) {
